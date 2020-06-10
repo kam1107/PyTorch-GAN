@@ -14,8 +14,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
-os.makedirs("images_realness", exist_ok=True)
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 parser.add_argument("--batch_size", type=int, default=64, help="size of the batches")
@@ -29,10 +27,14 @@ parser.add_argument("--img_size", type=int, default=32, help="size of each image
 parser.add_argument("--channels", type=int, default=3, help="number of image channels")
 parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
 parser.add_argument("--num_outcomes", type=int, default=10)
+parser.add_argument("--version", type=str, default="acgan_realness")
 opt = parser.parse_args()
 print(opt)
 
 cuda = True if torch.cuda.is_available() else False
+
+os.makedirs("images/%s" % opt.version, exist_ok=True)
+os.makedirs("saved_models/%s" % opt.version, exist_ok=True)
 
 
 def weights_init_normal(m):
@@ -276,3 +278,6 @@ for epoch in range(opt.n_epochs):
         batches_done = epoch * len(dataloader) + i
         if batches_done % opt.sample_interval == 0:
             sample_image(n_row=10, batches_done=batches_done)
+    
+    torch.save(generator.state_dict(), "saved_models/%s/%d_G.pth" % (opt.version, epoch))
+    torch.save(discriminator.state_dict(), "saved_models/%s/%d_D.pth" % (opt.version, epoch))    
