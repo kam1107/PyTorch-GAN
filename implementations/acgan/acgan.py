@@ -14,8 +14,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
-os.makedirs("images", exist_ok=True)
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 parser.add_argument("--batch_size", type=int, default=64, help="size of the batches")
@@ -28,10 +26,14 @@ parser.add_argument("--n_classes", type=int, default=10, help="number of classes
 parser.add_argument("--img_size", type=int, default=32, help="size of each image dimension")
 parser.add_argument("--channels", type=int, default=3, help="number of image channels")
 parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
+parser.add_argument("--version", type=str, default="acgan")
 opt = parser.parse_args()
 print(opt)
 
 cuda = True if torch.cuda.is_available() else False
+
+os.makedirs("images/%s" % opt.version, exist_ok=True)
+os.makedirs("saved_models/%s" % opt.version, exist_ok=True)
 
 
 def weights_init_normal(m):
@@ -169,7 +171,7 @@ def sample_image(n_row, batches_done):
     labels = np.array([num for _ in range(n_row) for num in range(n_row)])
     labels = Variable(LongTensor(labels))
     gen_imgs = generator(z, labels)
-    save_image(gen_imgs.data, "images/%d.png" % batches_done, nrow=n_row, normalize=True)
+    save_image(gen_imgs.data, "images/%s/%d.png" % (opt.version, batches_done), nrow=n_row, normalize=True)
 
 
 # ----------
@@ -177,6 +179,7 @@ def sample_image(n_row, batches_done):
 # ----------
 
 for epoch in range(opt.n_epochs):
+
     for i, (imgs, labels) in enumerate(dataloader):
 
         batch_size = imgs.shape[0]
@@ -241,3 +244,6 @@ for epoch in range(opt.n_epochs):
         batches_done = epoch * len(dataloader) + i
         if batches_done % opt.sample_interval == 0:
             sample_image(n_row=10, batches_done=batches_done)
+        
+    torch.save(generator.state_dict(), "saved_models/%s/%d_G.pth" % (opt.version, epoch))
+    torch.save(discriminator.state_dict(), "saved_models/%s/%d_D.pth" % (opt.version, epoch))    
