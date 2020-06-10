@@ -14,7 +14,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
-os.makedirs("images", exist_ok=True)
+os.makedirs("images_realness", exist_ok=True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
@@ -28,6 +28,7 @@ parser.add_argument("--n_classes", type=int, default=10, help="number of classes
 parser.add_argument("--img_size", type=int, default=32, help="size of each image dimension")
 parser.add_argument("--channels", type=int, default=3, help="number of image channels")
 parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
+parser.add_argument("--num_outcomes", type=int, default=10)
 opt = parser.parse_args()
 print(opt)
 
@@ -169,7 +170,7 @@ def sample_image(n_row, batches_done):
     labels = np.array([num for _ in range(n_row) for num in range(n_row)])
     labels = Variable(LongTensor(labels))
     gen_imgs = generator(z, labels)
-    save_image(gen_imgs.data, "images/%d.png" % batches_done, nrow=n_row, normalize=True)
+    save_image(gen_imgs.data, "images_realness/%d.png" % batches_done, nrow=n_row, normalize=True)
 
 def categorical_loss(batch_size, anchor, feature, skewness):
     v_min = -1
@@ -200,6 +201,7 @@ def categorical_loss(batch_size, anchor, feature, skewness):
 
 for epoch in range(opt.n_epochs):
     for i, (imgs, labels) in enumerate(dataloader):
+        batch_size = imgs.shape[0]
         # Adversarial ground truths
         # set up anchors
         gauss = np.random.normal(0, 0.1, 1000)
@@ -211,10 +213,8 @@ for epoch in range(opt.n_epochs):
         anchor1 = count / sum(count)
         
         with torch.no_grad():
-            anchor_real = torch.zeros((real_images.size(0), self.num_outcomes), dtype=torch.float).cuda() + torch.tensor(anchor1, dtype=torch.float).cuda()
-            anchor_fake = torch.zeros((real_images.size(0), self.num_outcomes), dtype=torch.float).cuda() + torch.tensor(anchor0, dtype=torch.float).cuda()
-
-        batch_size = imgs.shape[0]
+            anchor_real = torch.zeros((batch_size, opt.num_outcomes), dtype=torch.float).cuda() + torch.tensor(anchor1, dtype=torch.float).cuda()
+            anchor_fake = torch.zeros((batch_size, opt.num_outcomes), dtype=torch.float).cuda() + torch.tensor(anchor0, dtype=torch.float).cuda()
 
         # Configure input
         real_imgs = Variable(imgs.type(FloatTensor))
@@ -251,7 +251,7 @@ for epoch in range(opt.n_epochs):
         optimizer_D.zero_grad()
 
         # Loss for real images
-        #real_pred, real_aux = discriminator(real_imgs)
+        real_pred, real_aux = discriminator(real_imgs)
         d_real_loss = (categorical_loss(batch_size, anchor_real, real_pred, 1) + auxiliary_loss(real_aux, labels)) / 2
 
         # Loss for fake images
