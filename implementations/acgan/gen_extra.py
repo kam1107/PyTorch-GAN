@@ -106,9 +106,7 @@ discriminator = Discriminator()
 if cuda:
     generator.cuda()
     discriminator.cuda()
-    adversarial_loss.cuda()
-    auxiliary_loss.cuda()
-
+   
 FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if cuda else torch.LongTensor
 
@@ -130,7 +128,7 @@ def sample_image(n_row, batches_done):
 
 for epoch in range(opt.n_epochs):
     os.makedirs("extra/%s/%d" % (opt.version, epoch), exist_ok=True)
-    generator.load_state_dict(torch.load(os.path.join('save_models', opt.version, '%d_G.pth'%epoch)))
+    generator.load_state_dict(torch.load(os.path.join('saved_models', opt.version, '%d_G.pth'%epoch)))
     ext_curr = 0
     for ext in range(int(5000/opt.batch_size)):
         z = Variable(FloatTensor(np.random.normal(0, 1, (opt.batch_size, opt.latent_dim))))
@@ -139,6 +137,6 @@ for epoch in range(opt.n_epochs):
         gen_imgs = generator(z, labels)
         
         for i in range(opt.batch_size):
-            save_image(denorm(gen_imgs[i].data), os.path.join('extra', opt.version, str(epoch), '{}_{}_fake.png'.format(ext_curr, labels[i])))
+            save_image(gen_imgs[i].data, os.path.join('extra', opt.version, str(epoch), '{}_{}_fake.png'.format(ext_curr, labels[i].data)))
             ext_curr += 1
         

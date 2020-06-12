@@ -26,7 +26,7 @@ parser.add_argument("--n_classes", type=int, default=10, help="number of classes
 parser.add_argument("--img_size", type=int, default=32, help="size of each image dimension")
 parser.add_argument("--channels", type=int, default=3, help="number of image channels")
 parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
-parser.add_argument("--num_outcomes", type=int, default=10)
+parser.add_argument("--num_outcomes", type=int, default=3)
 parser.add_argument("--version", type=str, default="acgan_realness")
 opt = parser.parse_args()
 print(opt)
@@ -110,7 +110,6 @@ class Discriminator(nn.Module):
 
         return validity, label
 
-
 # Loss functions
 adversarial_loss = torch.nn.BCELoss()
 auxiliary_loss = torch.nn.CrossEntropyLoss()
@@ -172,7 +171,7 @@ def sample_image(n_row, batches_done):
     labels = np.array([num for _ in range(n_row) for num in range(n_row)])
     labels = Variable(LongTensor(labels))
     gen_imgs = generator(z, labels)
-    save_image(gen_imgs.data, "images_realness/%d.png" % batches_done, nrow=n_row, normalize=True)
+    save_image(gen_imgs.data, "images/%s/%d.png" % (opt.version, batches_done), nrow=n_row, normalize=True)
 
 def categorical_loss(batch_size, anchor, feature, skewness):
     v_min = -1
