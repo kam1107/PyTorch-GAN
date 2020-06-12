@@ -26,7 +26,7 @@ parser.add_argument("--n_classes", type=int, default=10, help="number of classes
 parser.add_argument("--img_size", type=int, default=32, help="size of each image dimension")
 parser.add_argument("--channels", type=int, default=3, help="number of image channels")
 parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
-parser.add_argument("--num_outcomes", type=int, default=10)
+parser.add_argument("--num_outcomes", type=int, default=3)
 parser.add_argument("--version", type=str, default="acgan_realness")
 parser.add_argument("--diters", type=int, default=1)
 parser.add_argument("--giters", type=int, default=1)
@@ -111,7 +111,6 @@ class Discriminator(nn.Module):
         label = self.aux_layer(out)
 
         return validity, label
-
 
 # Loss functions
 adversarial_loss = torch.nn.BCELoss()
